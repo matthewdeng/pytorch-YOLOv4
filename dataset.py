@@ -138,6 +138,7 @@ def image_data_augmentation(mat, w, h, pleft, ptop, swidth, sheight, flip, dhue,
             if img.shape[2] >= 3:
                 hsv_src = cv2.cvtColor(sized.astype(np.float32), cv2.COLOR_RGB2HSV)  # RGB to HSV
                 hsv = cv2.split(hsv_src)
+                hsv = list(hsv)
                 hsv[1] *= dsat
                 hsv[2] *= dexp
                 hsv[0] += 179 * dhue
@@ -174,7 +175,8 @@ def image_data_augmentation(mat, w, h, pleft, ptop, swidth, sheight, flip, dhue,
             gaussian_noise = max(gaussian_noise, 0)
             cv2.randn(noise, 0, gaussian_noise)  # mean and variance
             sized = sized + noise
-    except:
+    except Exception as ex:
+        print(ex)
         print("OpenCV can't augment image: " + str(w) + " x " + str(h))
         sized = mat
 
@@ -256,6 +258,10 @@ class Yolo_dataset(Dataset):
         f = open(label_path, 'r', encoding='utf-8')
         for line in f.readlines():
             data = line.split(" ")
+            if len(data) <= 1:
+                # can't open
+                print(data)
+                continue
             truth[data[0]] = []
             for i in data[1:]:
                 truth[data[0]].append([int(float(j)) for j in i.split(',')])
@@ -429,24 +435,38 @@ def get_image_id(filename:str) -> int:
     # no = f"{int(no):04d}"
     # return int(lv+no)
 
-    print("You could also create your own 'get_image_id' function.")
-    # print(filename)
-    parts = filename.split('/')
-    id = int(parts[-1][0:-4])
+    # parts = filename.split("_")
+    # # print(parts)
+    # first = parts[1]
+    # second = parts[2][4:] if parts[2].startswith("MOV-") else "0"
+    # id = int(first + second)
     # print(id)
+
+    import hashlib
+    id = int(hashlib.sha256(os.path.basename(filename).encode()).hexdigest(), 16) % (10**6)
+    print(id)
+
+
+    # print("You could also create your own 'get_image_id' function.")
+    # print(filename)
+    # parts = os.path.splitext(os.path.basename(filename))[0]
+    # id = int(parts)
     return id
 
 
 if __name__ == "__main__":
-    from cfg import Cfg
-    import matplotlib.pyplot as plt
+    get_image_id("IMG_8489_jpg.rf.e79ed773754ce88ed4a9a9042d98dca9.jpg")
+    get_image_id("IMG_8496_MOV-2_jpg.rf.a07bf41c4d61ee18223b3cf390c8fdda.jpg")
 
-    random.seed(2020)
-    np.random.seed(2020)
-    Cfg.dataset_dir = '/mnt/e/Dataset'
-    dataset = Yolo_dataset(Cfg.train_label, Cfg)
-    for i in range(100):
-        out_img, out_bboxes = dataset.__getitem__(i)
-        a = draw_box(out_img.copy(), out_bboxes.astype(np.int32))
-        plt.imshow(a.astype(np.int32))
-        plt.show()
+    # from cfg import Cfg
+    # import matplotlib.pyplot as plt
+    #
+    # random.seed(2020)
+    # np.random.seed(2020)
+    # Cfg.dataset_dir = '/mnt/e/Dataset'
+    # dataset = Yolo_dataset(Cfg.train_label, Cfg)
+    # for i in range(100):
+    #     out_img, out_bboxes = dataset.__getitem__(i)
+    #     a = draw_box(out_img.copy(), out_bboxes.astype(np.int32))
+    #     plt.imshow(a.astype(np.int32))
+    #     plt.show()

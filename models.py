@@ -473,10 +473,10 @@ if __name__ == "__main__":
 
     model = Yolov4(yolov4conv137weight=None, n_classes=n_classes, inference=True)
 
-    pretrained_dict = torch.load(weightfile, map_location=torch.device('cuda'))
+    pretrained_dict = torch.load(weightfile)
     model.load_state_dict(pretrained_dict)
 
-    use_cuda = True
+    use_cuda = False
     if use_cuda:
         model.cuda()
 
