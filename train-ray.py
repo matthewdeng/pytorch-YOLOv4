@@ -358,14 +358,14 @@ def train_func(config):
     if config.TRAIN_OPTIMIZER.lower() == 'adam':
         optimizer = optim.Adam(
             model.parameters(),
-            lr=config.learning_rate / config.batch,
+            lr=config.learning_rate,
             betas=(0.9, 0.999),
             eps=1e-08,
         )
     elif config.TRAIN_OPTIMIZER.lower() == 'sgd':
         optimizer = optim.SGD(
             params=model.parameters(),
-            lr=config.learning_rate / config.batch,
+            lr=config.learning_rate,
             momentum=config.momentum,
             weight_decay=config.decay,
         )
@@ -421,14 +421,14 @@ def train_func(config):
                                         'loss_obj': loss_obj.item(),
                                         'loss_cls': loss_cls.item(),
                                         'loss_l2': loss_l2.item(),
-                                        'lr': scheduler.get_lr()[0] * config.batch
+                                        'lr': scheduler.get_lr()[0]
                                         })
                     print('Train step_{}: loss : {},loss xy : {},loss wh : {},'
                                   'loss obj : {}，loss cls : {},loss l2 : {},lr : {}'
                                   .format(global_step, loss.item(), loss_xy.item(),
                                           loss_wh.item(), loss_obj.item(),
                                           loss_cls.item(), loss_l2.item(),
-                                          scheduler.get_lr()[0] * config.batch))
+                                          scheduler.get_lr()[0]))
 
                 pbar.update(images.shape[0] * train.world_size())
 
@@ -437,6 +437,8 @@ def train_func(config):
             else:
                 eval_model = Yolov4(cfg.pretrained, n_classes=cfg.classes, inference=True)
             eval_model = train.torch.prepare_model(eval_model)
+            # This will either both be DDP or not.
+            eval_model.load_state_dict(model.state_dict())
 
             evaluator = evaluate(eval_model, val_loader, config, device)
             del eval_model
@@ -449,7 +451,7 @@ def train_func(config):
                             'train/loss_obj': epoch_loss_obj,
                             'train/loss_cls': epoch_loss_cls,
                             'train/loss_l2': epoch_loss_l2,
-                            'lr': scheduler.get_last_lr()[0] * config.batch,
+                            'lr': scheduler.get_last_lr()[0],
                             'train/AP': stats[0],
                             'train/AP50': stats[1],
                             'train/AP75': stats[2],

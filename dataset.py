@@ -444,7 +444,7 @@ def get_image_id(filename:str) -> int:
 
     import hashlib
     id = int(hashlib.sha256(os.path.basename(filename).encode()).hexdigest(), 16) % (10**6)
-    print(id)
+    # print(id)
 
 
     # print("You could also create your own 'get_image_id' function.")
